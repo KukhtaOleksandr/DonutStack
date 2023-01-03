@@ -5,8 +5,6 @@ namespace Input
 {
     public class GameInput : MonoBehaviour
     {
-        [SerializeField] private Camera _camera;
-
         [Inject] private SignalBus _signalBus;
 
         void Update()
