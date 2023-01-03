@@ -1,6 +1,7 @@
 using Zenject;
 using UnityEngine;
 using Donuts;
+using Donuts.StateMachine;
 
 namespace Contexts.Scene.Installers
 {
@@ -11,9 +12,10 @@ namespace Contexts.Scene.Installers
 
         public override void InstallBindings()
         {
+            Container.DeclareSignal<SignalDonutMovedToPosition>();
             Container.BindInstance(_donutPrefab).AsSingle().WhenInjectedInto<DonutFactory>();
             Container.BindInstance(_spawnPosition).AsSingle().WhenInjectedInto<DonutFactory>();
-            Container.Bind<DonutFactory>().AsSingle();
+            Container.BindInterfacesTo<DonutFactory>().AsSingle().NonLazy();
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Donuts.StateMachine
     {
         protected override void Initialize()
         {
-            
+            ChangeState<IdleState>();
         }
     }
 }

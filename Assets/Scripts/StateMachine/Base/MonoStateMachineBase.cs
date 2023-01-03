@@ -15,25 +15,33 @@ namespace StateMachine.Base
 
         void OnEnable()
         {
-            _signalBus.Subscribe<SignalChangedState>(OnChangedState);
+            _signalBus.Subscribe<MonoSignalChangedState>(OnChangedState);
             Initialize();
         }
 
         void OnDisable()
         {
-            _signalBus.Unsubscribe<SignalChangedState>(OnChangedState);
+            _signalBus.Unsubscribe<MonoSignalChangedState>(OnChangedState);
         }
 
-        private void OnChangedState(SignalChangedState args)
+        private void OnChangedState(MonoSignalChangedState args)
         {
-            ChangeState(args.State.GetType());
+            //ChangeState(args.State.GetType());
+            ChangeState(args.State);
         }
 
         protected void ChangeState<TState>() where TState : IState
         {
             ChangeState(typeof(TState));
+            //ChangeState(typeof(TState));
         }
 
+        protected void ChangeState(IState state)
+        {
+            currentState?.Exit();
+            currentState = state;
+            currentState.Enter();
+        }
         protected void ChangeState(Type state)
         {
             currentState?.Exit();
