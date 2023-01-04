@@ -1,6 +1,6 @@
 using Zenject;
 
-namespace Rows
+namespace Level
 {
     public class RowsInstaller : MonoInstaller
     {

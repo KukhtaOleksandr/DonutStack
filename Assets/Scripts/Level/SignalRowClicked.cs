@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Rows
+namespace Level
 {
     public struct SignalRowClicked
     {

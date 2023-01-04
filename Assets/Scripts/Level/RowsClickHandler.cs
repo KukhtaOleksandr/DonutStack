@@ -2,7 +2,7 @@ using Input;
 using UnityEngine;
 using Zenject;
 
-namespace Rows
+namespace Level
 {
     public class RowsClickHandler : MonoBehaviour
     {
@@ -27,8 +27,8 @@ namespace Rows
 
             if (Physics.Raycast(ray, out hit, 100, _layerMask))
             {
-                Vector3 cellPosition = hit.transform.GetComponent<Row>().GetFreeCellPosition();
-                _signalBus.Fire<SignalRowClicked>(new SignalRowClicked() { Position = cellPosition });
+                Cell freeCell = hit.transform.GetComponent<Row>().GetFreeCell();
+                _signalBus.Fire<SignalRowClicked>(new SignalRowClicked() { Position = freeCell.transform.position });
             }
         }
     }

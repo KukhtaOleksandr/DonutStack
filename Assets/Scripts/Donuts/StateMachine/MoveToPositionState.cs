@@ -34,7 +34,7 @@ namespace Donuts.StateMachine
             
             float duration = Vector3.Distance(_donut.position,movePosition)/Speed;
             duration = Mathf.Clamp(duration,0.35f,0.75f);
-            Debug.Log(duration);
+            
             
             _donut.DOMove(movePosition, duration).OnComplete(() => _signalBus.Fire<SignalDonutMovedToPosition>());
         }
