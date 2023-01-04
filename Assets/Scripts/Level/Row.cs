@@ -30,8 +30,8 @@ namespace Level
             ActiveCells.Add(result);
             _cellsSorted.Remove(result);
 
-            List<Cell> activeNeighbours = LevelArea.GetCellActiveNeighbors(this,result);
-            Debug.Log(activeNeighbours.Count);
+            Dictionary<NeighborType, Cell> activeNeighbours = LevelArea.GetCellActiveNeighbors(this,result);
+            //Debug.Log(activeNeighbours.Count);
             return result;
         }
 

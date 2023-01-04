@@ -434,8 +434,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f17b8b8bfc9b14044af36bbf06f02c68, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _donutPrefab: {fileID: 3727941243073353437, guid: c447d1c1f91f16d458b7f7b4b96ad124,
-    type: 3}
+  _donutPrefabs:
+  - {fileID: 8408876222998767961, guid: c03bc82c5702adb4aaec6892eaf56383, type: 3}
+  - {fileID: 8408876222998767961, guid: 28ec10d27c3d6d9448bd0044c238415b, type: 3}
   _spawnPosition: {fileID: 2092408254}
 --- !u!114 &202127058
 MonoBehaviour:
@@ -446,7 +447,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 202127053}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c977406183e125e4888a02e7ffac5762, type: 3}
+  m_Script: {fileID: 11500000, guid: 98bcec9ec8a493a4db480ce511cb9c77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &304681928

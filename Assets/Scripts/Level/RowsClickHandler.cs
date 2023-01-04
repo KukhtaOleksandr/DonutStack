@@ -1,3 +1,4 @@
+using Donuts;
 using Input;
 using UnityEngine;
 using Zenject;
@@ -9,6 +10,8 @@ namespace Level
         [SerializeField] private Camera _camera;
         [SerializeField] private LayerMask _layerMask;
         [Inject] private SignalBus _signalBus;
+        [Inject] private ConnectionHandler _connectionHandler;
+        [Inject] private DonutFactory _donutFactory;
 
         void OnEnable()
         {
@@ -27,7 +30,11 @@ namespace Level
 
             if (Physics.Raycast(ray, out hit, 100, _layerMask))
             {
-                Cell freeCell = hit.transform.GetComponent<Row>().GetFreeCell();
+                Row row = hit.transform.GetComponent<Row>();
+                Cell freeCell = row.GetFreeCell();
+                _connectionHandler.CurrentCell=freeCell;
+                _connectionHandler.CurrentRow=row;
+                _connectionHandler.CurrentCell.DonutStack=_donutFactory.CurrentDonutStack;
                 _signalBus.Fire<SignalRowClicked>(new SignalRowClicked() { Position = freeCell.transform.position });
             }
         }
