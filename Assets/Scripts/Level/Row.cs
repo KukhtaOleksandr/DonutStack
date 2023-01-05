@@ -14,30 +14,63 @@ namespace Level
         public Row RightNeighbor { get => _rightNeighbor; }
         public List<Cell> ActiveCells { get; private set; }
 
-        private List<Cell> _cellsSorted;
+        private List<Cell> _freeCells;
 
 
         void Start()
         {
-            ActiveCells=new();
+            ActiveCells = new();
             SetCellsPositions();
         }
 
         public Cell GetFreeCell()
         {
-            Cell result = _cellsSorted[0];
-            result.IsActive = true;
+            Cell result = _freeCells[0];
             ActiveCells.Add(result);
-            _cellsSorted.Remove(result);
+            _freeCells.Remove(result);
 
-            Dictionary<NeighborType, Cell> activeNeighbours = LevelArea.GetCellActiveNeighbors(this,result);
-            //Debug.Log(activeNeighbours.Count);
             return result;
+        }
+
+        public void ReleaseCellAndMoveOthers(Cell cell)
+        {
+            cell.DestroyDonutStack();
+            int index = ActiveCells.IndexOf(cell) + 1;
+            //if there's at least one active cell after release cell
+            if (index < ActiveCells.Count)
+            {
+                List<Cell> activeCellsAfterReleaseCell = ActiveCells.Skip(index).ToList();
+                Cell lastCell = cell;
+                lastCell = MoveCells(activeCellsAfterReleaseCell, lastCell);
+
+                ReleaseCell(lastCell);
+            }
+            else
+            {
+                ReleaseCell(cell);
+            }
+        }
+
+        private static Cell MoveCells(List<Cell> activeCellsAfterReleaseCell, Cell lastCell)
+        {
+            foreach (Cell cellAfter in activeCellsAfterReleaseCell)
+            {
+                cellAfter.MoveDonutToAnotherCell(lastCell);
+                lastCell = cellAfter;
+            }
+
+            return lastCell;
+        }
+
+        private void ReleaseCell(Cell cell)
+        {
+            ActiveCells.Remove(cell);
+            _freeCells.Insert(0, cell);
         }
 
         private void SetCellsPositions()
         {
-            _cellsSorted = _cells.OrderByDescending(x => x.transform.localPosition.y).ToList();
+            _freeCells = _cells.OrderByDescending(x => x.transform.localPosition.y).ToList();
         }
     }
 }

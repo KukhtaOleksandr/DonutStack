@@ -1,10 +1,15 @@
 using System.Collections.Generic;
+using Zenject;
 
 namespace Level
 {
-    public static class LevelArea
+    public class LevelArea
     {
-        public static Dictionary<NeighborType, Cell> GetCellActiveNeighbors(Row row, Cell cell)
+        [Inject] private List<Row> _rows;
+
+        public List<Row> Rows { get => _rows; }
+
+        public Dictionary<NeighborType, Cell> GetCellActiveNeighbors(Row row, Cell cell)
         {
             Dictionary<NeighborType, Cell> neighbors = new();
             int index = row.ActiveCells.IndexOf(cell);
@@ -17,7 +22,7 @@ namespace Level
             return neighbors;
         }
 
-        private static void SetVerticalNeighbors(Row row, Dictionary<NeighborType, Cell> neighbors, int index)
+        private void SetVerticalNeighbors(Row row, Dictionary<NeighborType, Cell> neighbors, int index)
         {
             if (index != 0)
                 neighbors.Add(NeighborType.Top, row.ActiveCells[index - 1]);
@@ -25,7 +30,7 @@ namespace Level
                 neighbors.Add(NeighborType.Bottom, row.ActiveCells[index + 1]);
         }
 
-        private static void SetSideNeighbors(Row row, Dictionary<NeighborType, Cell> neighbors, NeighborType type, int index)
+        private void SetSideNeighbors(Row row, Dictionary<NeighborType, Cell> neighbors, NeighborType type, int index)
         {
             if (row != null)
             {
