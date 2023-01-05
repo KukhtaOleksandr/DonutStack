@@ -32,11 +32,18 @@ namespace Level
             {
                 Row row = hit.transform.GetComponent<Row>();
                 Cell freeCell = row.GetFreeCell();
-                _connectionHandler.CurrentCell=freeCell;
-                _connectionHandler.CurrentRow=row;
-                _connectionHandler.CurrentCell.DonutStack=_donutFactory.CurrentDonutStack;
+
+                InitializeConnectionHandler(row, freeCell);
+                
                 _signalBus.Fire<SignalRowClicked>(new SignalRowClicked() { Position = freeCell.transform.position });
             }
+        }
+
+        private void InitializeConnectionHandler(Row row, Cell freeCell)
+        {
+            _connectionHandler.CurrentCell = freeCell;
+            _connectionHandler.CurrentRow = row;
+            _connectionHandler.CurrentCell.DonutStack = _donutFactory.CurrentDonutStack;
         }
     }
 }

@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Donuts
@@ -7,5 +9,6 @@ namespace Donuts
         [SerializeField] private DonutType donutType;
 
         public DonutType Type { get => donutType; }
+
     }
 }

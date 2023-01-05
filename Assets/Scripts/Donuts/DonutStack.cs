@@ -3,43 +3,65 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
+using Zenject;
 
 namespace Donuts
 {
     public class DonutStack : MonoBehaviour
     {
-        private const float Offset = 0.3f;
+        private const float Speed = 5;
+        private const int MaxDonutSpaces = 3;
 
-        public List<Donut> Donuts { get; private set; }
+        public int FreeDonutPlaces { get; set; }
+        public GameObject Cylinder { get => _cylinder; }
+
+        [Inject] private SignalBus _signalBus;
+        [SerializeField] private GameObject _cylinder;
+
+        private List<Donut> _donuts;
 
         void Start()
         {
-            Donuts = GetComponentsInChildren<Donut>().ToList();
-            Debug.Log(Donuts.Count);
+            _donuts = GetComponentsInChildren<Donut>().ToList();
+            FreeDonutPlaces = MaxDonutSpaces - _donuts.Count;
+        }
+
+        public void RemoveDonut(Donut donut)
+        {
+            _donuts.Remove(donut);
+            FreeDonutPlaces++;
+            if (FreeDonutPlaces == 3)
+                _signalBus.Fire<SignalDonutStackIsEmpty>(new SignalDonutStackIsEmpty() { DonutStack = this });
+        }
+
+        public void AddDonut(Donut donut)
+        {
+            _donuts.Add(donut);
+            FreeDonutPlaces--;
+            if (FreeDonutPlaces == 0)
+                _signalBus.Fire<SignalDonutStackIsFull>(new SignalDonutStackIsFull() { DonutStack = this });
+        }
+
+        public List<Donut> GetDonutsOfType(DonutType donutType)
+        {
+            List<Donut> donuts = new List<Donut>(_donuts.FindAll(donut => donut.Type == donutType));
+            return donuts;
         }
 
         public Donut GetTopDonut()
         {
-            return Donuts[Donuts.Count - 1];
+            return _donuts[_donuts.Count - 1];
         }
 
-        public async Task TransferTopDonutToOther(DonutStack donutStack)
+        public async Task MoveDonutStack(Vector3 position)
         {
-            Donut topDonut = GetTopDonut();
-            Vector3 newPosition =new Vector3(donutStack.GetTopDonut().transform.position.x, 
-                                            donutStack.GetTopDonut().transform.position.y + Offset, 
-                                            donutStack.GetTopDonut().transform.position.z);
+            Vector3 movePosition = new Vector3(position.x, 0, position.z);
 
-            topDonut.transform.DOMove(newPosition,0.5f).OnComplete(()=>CompleteTransfer(topDonut,donutStack));
-            topDonut.transform.DOScale(donutStack.GetTopDonut().transform.localScale*0.85f,0.5f);
-            donutStack.Donuts.Add(topDonut);
-            await Task.Delay(500);
-        }
+            float duration = Vector3.Distance(transform.position, movePosition) / Speed;
+            duration = Mathf.Clamp(duration, 0.35f, 0.75f);
 
-        private void CompleteTransfer(Donut topDonut,DonutStack donutStack)
-        {
-            topDonut.transform.parent = donutStack.transform;
-            Donuts.Remove(topDonut);
+            transform.DOMove(movePosition, duration);
+            await Task.Delay((int)(duration * 1000));
         }
     }
 }
