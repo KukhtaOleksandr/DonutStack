@@ -15,8 +15,16 @@ namespace Level
         public async void MoveDonutToAnotherCell(Cell another)
         {
             await DonutStack.MoveDonutStack(another.transform.position);
-            another.DonutStack=DonutStack;
+            another.DonutStack = DonutStack;
             DonutStack = null;
+        }
+
+        public bool CanTransferDonutTo(Cell another)
+        {
+            if (another.DonutStack.FreeDonutPlaces > 0 && DonutStack.FreeDonutPlaces < 3)
+                if (another.DonutStack.GetTopDonut().Type == DonutStack.GetTopDonut().Type)
+                    return true;
+            return false;
         }
 
     }

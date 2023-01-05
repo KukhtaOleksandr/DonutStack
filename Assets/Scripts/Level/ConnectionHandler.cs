@@ -36,7 +36,7 @@ namespace Level
             {
                 if (DonutsTypesEqual(cell))
                 {
-                    while (cell.DonutStack.FreeDonutPlaces > 0 && CurrentCell.DonutStack.FreeDonutPlaces<3)
+                    while (CurrentCell.CanTransferDonutTo(cell))
                         await TransferDonut(from: CurrentCell, to: cell);
                 }
             }

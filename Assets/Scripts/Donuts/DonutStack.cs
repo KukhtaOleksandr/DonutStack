@@ -42,9 +42,13 @@ namespace Donuts
                 _signalBus.Fire<SignalDonutStackIsFull>(new SignalDonutStackIsFull() { DonutStack = this });
         }
 
-        public List<Donut> GetDonutsOfType(DonutType donutType)
+        public List<Donut> GetTopDonutsOfType(DonutType donutType)
         {
             List<Donut> donuts = new List<Donut>(_donuts.FindAll(donut => donut.Type == donutType));
+            foreach(Donut donut in donuts)
+            {
+                
+            }
             return donuts;
         }
 

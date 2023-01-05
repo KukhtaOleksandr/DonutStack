@@ -31,8 +31,8 @@ namespace Level
 
         public void ExecuteConnection(SignalDonutStackIsFull args)
         {
-            Row row = _levelArea.Rows.Find(row => row.ActiveCells.Find(c => c.DonutStack));
-            Cell cell = row.ActiveCells.Find(r => r.DonutStack);
+            Row row = _levelArea.Rows.Find(row => row.ActiveCells.Find(c => c.DonutStack == args.DonutStack));
+            Cell cell = row.ActiveCells.Find(c => c.DonutStack == args.DonutStack);
             row.ReleaseCellAndMoveOthers(cell);
         }
 
