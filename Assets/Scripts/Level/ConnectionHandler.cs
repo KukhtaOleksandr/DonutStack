@@ -30,14 +30,19 @@ namespace Level
 
         private async void GetPath()
         {
-            Dictionary<NeighborType, Cell> neighbors = _levelArea.GetCellActiveNeighbors(CurrentRow, CurrentCell);
+            Dictionary<NeighborType, Cell> neighbors = _levelArea.GetCellActiveNeighbors(CurrentCell);
 
             if (neighbors.TryGetValue(NeighborType.Top, out Cell cell))
             {
                 if (DonutsTypesEqual(cell))
                 {
-                    while (CurrentCell.CanTransferDonutTo(cell))
-                        await TransferDonut(from: CurrentCell, to: cell);
+                    // Cell from;
+                    // Cell to;
+                    // if (PathMaker.TryCollectFullStack(CurrentCell, cell,out from, out to))
+                    // {
+                        while (CurrentCell.CanTransferDonutTo(cell))
+                            await TransferDonut(from: CurrentCell, to: cell);
+                    //}
                 }
             }
             _signalBus.Fire<SignalConnectionFinished>();

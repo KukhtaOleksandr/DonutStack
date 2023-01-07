@@ -26,6 +26,9 @@ namespace Level
         {
             Row row = _levelArea.Rows.Find(row => row.ActiveCells.Find(c => c.DonutStack == args.DonutStack));
             Cell cell = row.ActiveCells.Find(c => c.DonutStack == args.DonutStack);
+            // Cell cell = args.DonutStack.GetComponentInParent<Cell>();
+            // Row row = cell.GetComponentInParent<Row>();
+            
             row.ReleaseCellAndMoveOthers(cell);
         }
 
@@ -33,6 +36,9 @@ namespace Level
         {
             Row row = _levelArea.Rows.Find(row => row.ActiveCells.Find(c => c.DonutStack == args.DonutStack));
             Cell cell = row.ActiveCells.Find(c => c.DonutStack == args.DonutStack);
+
+            // Cell cell = args.DonutStack.GetComponentInParent<Cell>();
+            // Row row = cell.GetComponentInParent<Row>();
             row.ReleaseCellAndMoveOthers(cell);
         }
 

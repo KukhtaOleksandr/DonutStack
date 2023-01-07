@@ -9,8 +9,9 @@ namespace Level
 
         public List<Row> Rows { get => _rows; }
 
-        public Dictionary<NeighborType, Cell> GetCellActiveNeighbors(Row row, Cell cell)
+        public Dictionary<NeighborType, Cell> GetCellActiveNeighbors(Cell cell)
         {
+            Row row = cell.GetComponentInParent<Row>();
             Dictionary<NeighborType, Cell> neighbors = new();
             int index = row.ActiveCells.IndexOf(cell);
 

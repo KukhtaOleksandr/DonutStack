@@ -13,6 +13,7 @@ namespace Donuts
         private const int MaxDonutSpaces = 3;
 
         public int FreeDonutPlaces { get; set; }
+        public int DonutsCount { get => _donuts.Count; }
         public GameObject Cylinder { get => _cylinder; }
 
         [Inject] private SignalBus _signalBus;
@@ -23,6 +24,7 @@ namespace Donuts
         void Start()
         {
             _donuts = GetComponentsInChildren<Donut>().ToList();
+            _donuts = _donuts.OrderBy(d => d.transform.position.y).ToList();
             FreeDonutPlaces = MaxDonutSpaces - _donuts.Count;
         }
 
@@ -38,18 +40,38 @@ namespace Donuts
         {
             _donuts.Add(donut);
             FreeDonutPlaces--;
-            if (FreeDonutPlaces == 0)
+            if (IsDonutStackFull())
                 _signalBus.Fire<SignalDonutStackIsFull>(new SignalDonutStackIsFull() { DonutStack = this });
         }
 
-        public List<Donut> GetTopDonutsOfType(DonutType donutType)
+        private bool IsDonutStackFull()
         {
-            List<Donut> donuts = new List<Donut>(_donuts.FindAll(donut => donut.Type == donutType));
-            foreach(Donut donut in donuts)
+            return FreeDonutPlaces == 0 && GetTopDonutsOfOneType().Count == 3;
+        }
+
+        public List<Donut> GetTopDonutsOfOneType()
+        {
+            List<Donut> donuts = new List<Donut>(_donuts);
+            List<Donut> result = new List<Donut>();
+            donuts.Reverse();
+            DonutType topDonutType = GetTopDonut().Type;
+            foreach (Donut donut in donuts)
             {
-                
+                if (donut.Type == topDonutType)
+                {
+                    result.Add(donut);
+                }
+                else
+                {
+                    break;
+                }
             }
-            return donuts;
+            return result;
+        }
+
+        public int GetCountOfTopDonutsOfOneType()
+        {
+            return GetTopDonutsOfOneType().Count;
         }
 
         public Donut GetTopDonut()
