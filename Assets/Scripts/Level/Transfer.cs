@@ -10,7 +10,9 @@ namespace Level
         private const float Offset = 0.3f;
         public Cell From { get; set; }
         public Cell To { get; set; }
-        public bool Bipolar { get; set; }
+        public Cell Cell { get; set; }
+        public Cell NeighBor { get; set; }
+        public Transfer AttachedTransfer { get; set; }
 
         private async Task TransferDonut()
         {
@@ -27,7 +29,7 @@ namespace Level
         {
             if (IsTransferringLastDonut(from))
                 GameObject.Destroy(from.DonutStack.Cylinder);
-            fromTopDonut.transform.DOMove(newPosition, 0.5f).OnComplete(() => 
+            fromTopDonut.transform.DOMove(newPosition, 0.5f).OnComplete(() =>
             CompleteTransfer(fromTopDonut, from.DonutStack, to.DonutStack));
             fromTopDonut.transform.DOScale(to.DonutStack.GetTopDonut().transform.localScale * 0.85f, 0.5f);
         }
