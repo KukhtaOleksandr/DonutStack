@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Donuts;
 using UnityEngine;
 
@@ -12,17 +13,17 @@ namespace Level
             GameObject.Destroy(DonutStack.gameObject);
         }
 
-        public async void MoveDonutToAnotherCell(Cell another)
+        public async Task MoveDonutToAnotherCell(Cell another)
         {
             await DonutStack.MoveDonutStack(another.transform.position);
             another.DonutStack = DonutStack;
             DonutStack = null;
         }
 
-        public bool CanTransferDonutTo(Cell another)
+        public bool CanTransferDonutTo(Cell to)
         {
-            if (another.DonutStack.FreeDonutPlaces > 0 && DonutStack.FreeDonutPlaces < 3)
-                if (another.DonutStack.GetTopDonut().Type == DonutStack.GetTopDonut().Type)
+            if (DonutStack.FreeDonutPlaces < 3 && to.DonutStack.FreeDonutPlaces > 0)
+                if (to.DonutStack.GetTopDonut().Type == DonutStack.GetTopDonut().Type)
                     return true;
             return false;
         }

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using DG.Tweening;
 using Donuts;
@@ -12,9 +14,56 @@ namespace Level
         public Cell To { get; set; }
         public Cell Cell { get; set; }
         public Cell NeighBor { get; set; }
+        public Cell SimulatedCell { get; private set; }
         public Transfer AttachedTransfer { get; set; }
+        public Priority Priority { get; set; }
 
-        private async Task TransferDonut()
+        public void SimulateTransfer()
+        {
+            List<DonutType> fromDonuts = new(From.DonutStack.SimulatedDonuts);
+            List<DonutType> toDonuts = new(To.DonutStack.SimulatedDonuts);
+            while (toDonuts.Count < 3 && fromDonuts.Count > 1)
+            {
+                if (toDonuts[toDonuts.Count - 1] == fromDonuts[fromDonuts.Count - 1])
+                {
+                    toDonuts.Add(fromDonuts[fromDonuts.Count - 1]);
+                    fromDonuts.Remove(toDonuts[fromDonuts.Count - 1]);
+                }
+            }
+            if (fromDonuts.Count == 0)
+            {
+                TrySimulateDonutStacksMoving(From);
+            }
+            if (toDonuts.Count == 3)
+            {
+                TrySimulateDonutStacksMoving(To);
+            }
+        }
+
+        private void TrySimulateDonutStacksMoving(Cell cell)
+        {
+            Row row = cell.GetComponentInParent<Row>();
+            int cellIndex = row.ActiveCells.IndexOf(cell) + 1;
+            //if there's at least one active cell after release cell
+            if (cellIndex < row.ActiveCells.Count)
+            {
+                List<Cell> activeCellsAfterReleaseCell = row.ActiveCells.Skip(cellIndex).ToList();
+                SimulateDonutStackMove(activeCellsAfterReleaseCell, cell);
+            }
+        }
+
+        private void SimulateDonutStackMove(List<Cell> activeCellsAfterReleaseCell, Cell cell)
+        {
+            Cell lastCell = cell;
+            foreach (var c in activeCellsAfterReleaseCell)
+            {
+                lastCell.DonutStack.SimulatedDonuts = c.DonutStack.SimulatedDonuts;
+                lastCell = c;
+            }
+            lastCell.DonutStack.SimulatedDonuts = null;
+        }
+
+        public async Task TransferDonut()
         {
             Donut fromTopDonut = From.DonutStack.GetTopDonut();
             Vector3 newPosition = new Vector3(To.DonutStack.GetTopDonut().transform.position.x,

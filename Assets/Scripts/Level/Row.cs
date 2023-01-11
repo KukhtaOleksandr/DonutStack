@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Level
@@ -32,7 +33,7 @@ namespace Level
             return result;
         }
 
-        public void ReleaseCellAndMoveOthers(Cell cell)
+        public async Task ReleaseCellAndMoveOthers(Cell cell)
         {
             cell.DestroyDonutStack();
             int index = ActiveCells.IndexOf(cell) + 1;
@@ -41,7 +42,7 @@ namespace Level
             {
                 List<Cell> activeCellsAfterReleaseCell = ActiveCells.Skip(index).ToList();
                 Cell lastCell = cell;
-                lastCell = MoveCells(activeCellsAfterReleaseCell, lastCell);
+                lastCell = await MoveCells(activeCellsAfterReleaseCell, lastCell);
 
                 ReleaseCell(lastCell);
             }
@@ -51,11 +52,11 @@ namespace Level
             }
         }
 
-        private static Cell MoveCells(List<Cell> activeCellsAfterReleaseCell, Cell lastCell)
+        private async Task<Cell> MoveCells(List<Cell> activeCellsAfterReleaseCell, Cell lastCell)
         {
             foreach (Cell cellAfter in activeCellsAfterReleaseCell)
             {
-                cellAfter.MoveDonutToAnotherCell(lastCell);
+                await cellAfter.MoveDonutToAnotherCell(lastCell);
                 lastCell = cellAfter;
             }
 

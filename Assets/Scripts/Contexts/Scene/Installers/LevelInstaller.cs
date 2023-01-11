@@ -16,6 +16,7 @@ namespace Contexts.Scene.Installers
 
             Container.BindInstance(_rows).AsSingle();
             Container.Bind<LevelArea>().AsSingle();
+            Container.Bind<PathMaker>().AsSingle();
             Container.BindInterfacesAndSelfTo<ConnectionExecutor>().AsSingle();
         }
     }

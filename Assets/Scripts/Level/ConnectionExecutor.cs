@@ -12,14 +12,14 @@ namespace Level
 
         public void Initialize()
         {
-            _signalBus.Subscribe<SignalDonutStackIsEmpty>(ExecuteConnection);
-            _signalBus.Subscribe<SignalDonutStackIsFull>(ExecuteConnection);
+            //_signalBus.Subscribe<SignalDonutStackIsEmpty>(ExecuteConnection);
+            //_signalBus.Subscribe<SignalDonutStackIsFull>(ExecuteConnection);
         }
 
         public void Dispose()
         {
-            _signalBus.Unsubscribe<SignalDonutStackIsEmpty>(ExecuteConnection);
-            _signalBus.Unsubscribe<SignalDonutStackIsFull>(ExecuteConnection);
+            //_signalBus.Unsubscribe<SignalDonutStackIsEmpty>(ExecuteConnection);
+            //_signalBus.Unsubscribe<SignalDonutStackIsFull>(ExecuteConnection);
         }
 
         public void ExecuteConnection(SignalDonutStackIsEmpty args)

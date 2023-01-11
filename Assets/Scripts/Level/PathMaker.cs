@@ -5,76 +5,115 @@ using Zenject;
 
 namespace Level
 {
-    public static class PathMaker
+    public class PathMaker
     {
-        [Inject] private static LevelArea _levelArea;
+        [Inject] private LevelArea _levelArea;
 
-        private static Queue<Transfer> connection;
+        private Queue<Transfer> connection;
 
-        public static Queue<Transfer> GetPath(Cell cell)
+        public Queue<Transfer> GetPath(Cell cell)
         {
             connection = new();
             Transfer transfer = GetConnection(cell);
-            while(transfer.Cell!=cell)
+            if (transfer == null)
+            {
+                return null;
+            }
+            if (transfer.AttachedTransfer == null)
             {
                 connection.Enqueue(transfer);
-                transfer=transfer.AttachedTransfer;
+                return connection;
+            }
+
+            while (transfer.Cell != cell)
+            {
+                connection.Enqueue(transfer);
+                transfer = transfer.AttachedTransfer;
             }
             return connection;
         }
 
-        private static Transfer GetConnection(Cell cell)
+        private Transfer GetConnection(Cell cell)
         {
-            Dictionary<NeighborType, Cell> activeNeighbors = _levelArea.GetCellActiveNeighbors(cell);
-            activeNeighbors = (Dictionary<NeighborType, Cell>)activeNeighbors.Where(
-                n => n.Value.DonutStack.GetTopDonut().Type == cell.DonutStack.GetTopDonut().Type);
-            if (activeNeighbors.Count == 0)
-                return null;
+            Dictionary<NeighborType, Cell> activeNeighbors = _levelArea.GetCellActiveNeighbors(cell, null);
+            Dictionary<NeighborType, Cell> activeNeighborsWithSameTop = activeNeighbors.Where(
+            n => n.Value.DonutStack.GetTopDonut().Type == cell.DonutStack.GetTopDonut().Type).
+            ToDictionary(x => x.Key, x => x.Value);
 
-            Dictionary<Transfer, Priority> priorities = new();
-
-            foreach (var neighbor in activeNeighbors)
+            bool isNeighborWithFreeDonutPlaces = false;
+            foreach (var n in activeNeighborsWithSameTop)
             {
-                Transfer transfer;
-                Priority priority = GetPriority(cell, neighbor.Value, out transfer);
-                priorities.Add(transfer, priority);
+                if (n.Value.DonutStack.FreeDonutPlaces > 0)
+                {
+                    isNeighborWithFreeDonutPlaces = true;
+                    break;
+                }
             }
 
-            Dictionary<Transfer, Priority> highestPriorities = GetHighestPriorities(priorities);
+            if (isNeighborWithFreeDonutPlaces == false && cell.DonutStack.FreeDonutPlaces == 0)
+                return null;
+
+            List<Transfer> priorities = new();
+
+            foreach (var neighbor in activeNeighborsWithSameTop)
+            {
+                Transfer transfer = GetTransferPriority(cell, neighbor.Value);
+                priorities.Add(transfer);
+            }
+
+            List<Transfer> highestPriorities = GetHighestPriorities(priorities);
             if (highestPriorities.Count > 1)
             {
-                return GetSubConnection(highestPriorities);
+                foreach (var t in highestPriorities)
+                {
+                    t.SimulateTransfer();
+                }
+                Transfer result = GetSubConnection(highestPriorities, cell);
+                if (result == null)
+                    return highestPriorities.First();
+                return result;
             }
             else
             {
-                return highestPriorities.First().Key;
+                return highestPriorities.First();
             }
         }
 
-        private static Transfer GetSubConnection(Dictionary<Transfer, Priority> highestPriorities)
+        private Transfer GetSubConnection(List<Transfer> highestPriorities, Cell from)
         {
-            List<Dictionary<Transfer, Priority>> highestSubPriorities = new();
+            List<List<Transfer>> highestSubPriorities = new();
             foreach (var h in highestPriorities)
             {
-                Dictionary<NeighborType, Cell> activeNeighbors = _levelArea.GetCellActiveNeighbors(h.Key.Cell);
-                activeNeighbors = (Dictionary<NeighborType, Cell>)activeNeighbors.Where(
-                    n => n.Value.DonutStack.GetTopDonut().Type == h.Key.Cell.DonutStack.GetTopDonut().Type);
-                if (activeNeighbors.Count == 0)
-                    return null;
+                Dictionary<NeighborType, Cell> activeNeighbors = _levelArea.GetCellActiveNeighbors(h.NeighBor, from);
+                Dictionary<NeighborType, Cell> activeNeighborsWithSameTop = activeNeighbors.Where(
+                    n => n.Value.DonutStack.GetTopSimulatedDonut() == h.Cell.DonutStack.GetTopSimulatedDonut()).ToDictionary(x => x.Key, x => x.Value);
 
-                Dictionary<Transfer, Priority> priorities = new();
-
-                foreach (var neighbor in activeNeighbors)
+                bool isNeighborWithFreeDonutPlaces = false;
+                foreach (var n in activeNeighborsWithSameTop)
                 {
-                    Transfer transfer;
-                    Priority priority = GetPriority(h.Key.Cell, neighbor.Value, out transfer);
-                    priorities.Add(transfer, priority);
+                    if (n.Value.DonutStack.FreeDonutPlaces > 0)
+                    {
+                        isNeighborWithFreeDonutPlaces = true;
+                        break;
+                    }
                 }
 
-                Dictionary<Transfer, Priority> localPriorities = GetHighestPriorities(priorities);
+                List<Transfer> priorities = new();
+
+                foreach (var neighbor in activeNeighborsWithSameTop)
+                {
+                    Transfer transfer = GetTransferPriority(h.NeighBor, neighbor.Value);
+                    if (transfer != null)
+                        priorities.Add(transfer);
+                }
+
+                if (isNeighborWithFreeDonutPlaces == false && priorities.Count == 0)
+                    return null;
+
+                List<Transfer> localPriorities = GetHighestPriorities(priorities);
                 foreach (var p in localPriorities)
                 {
-                    p.Key.AttachedTransfer = h.Key;
+                    p.AttachedTransfer = h;
                     highestSubPriorities.Add(localPriorities);
                 }
             }
@@ -82,123 +121,141 @@ namespace Level
             highestSubPriorities = GetHighestPriorities(highestSubPriorities);
             if (highestSubPriorities.Count > 1)
             {
-                Dictionary<Transfer, Priority> newPriorities = new();
+                List<Transfer> newPriorities = new();
                 foreach (var d in highestSubPriorities)
                 {
                     foreach (var v in d)
                     {
-                        newPriorities.Add(v.Key, v.Value);
+                        newPriorities.Add(v);
                     }
                 }
-                return GetSubConnection(newPriorities);
+                return GetSubConnection(newPriorities, from);
             }
             else if (highestSubPriorities.Count == 0)
             {
-                return highestPriorities.First().Key;
+                return highestPriorities.First();
             }
             else
             {
-                return highestSubPriorities[0].First().Key;
+                return highestSubPriorities[0].First();
             }
-
         }
 
-        private static List<Dictionary<Transfer, Priority>> GetHighestPriorities(List<Dictionary<Transfer, Priority>> priorities)
+        private List<List<Transfer>> GetHighestPriorities(List<List<Transfer>> priorities)
         {
-            List<Dictionary<Transfer, Priority>> result = (List<Dictionary<Transfer, Priority>>)
-            priorities.Where(p => p.First().Value == Priority.High);
+            List<List<Transfer>> result =
+            priorities.Where(p => p.First().Priority == Priority.High).ToList();
 
             if (result.Count == 0)
-                result = (List<Dictionary<Transfer, Priority>>)
-                priorities.Where(p => p.First().Value == Priority.Medium);
+                result = priorities.Where(p => p.First().Priority == Priority.Medium).ToList();
             if (result.Count == 0)
-                result = (List<Dictionary<Transfer, Priority>>)
-                priorities.Where(p => p.First().Value == Priority.Low);
+                result = priorities.Where(p => p.First().Priority == Priority.Low).ToList();
             return result;
         }
 
-        private static Dictionary<Transfer, Priority> GetHighestPriorities(Dictionary<Transfer, Priority> priorities)
+        private List<Transfer> GetHighestPriorities(List<Transfer> priorities)
         {
-            Dictionary<Transfer, Priority> result = (Dictionary<Transfer, Priority>)priorities.Where(p => p.Value == Priority.High);
+            List<Transfer> result = priorities.Where(p => p.Priority == Priority.High).ToList();
             if (result.Count == 0)
-                result = (Dictionary<Transfer, Priority>)priorities.Where(p => p.Value == Priority.Medium);
+                result = priorities.Where(p => p.Priority == Priority.Medium).ToList();
             if (result.Count == 0)
-                result = (Dictionary<Transfer, Priority>)priorities.Where(p => p.Value == Priority.Low);
+                result = priorities.Where(p => p.Priority == Priority.Low).ToList();
             return result;
         }
 
-        private static Priority GetPriority(Cell cell, Cell neighborCell, out Transfer transfer)
+        private Transfer GetTransferPriority(Cell cell, Cell neighborCell)
         {
-            transfer = new Transfer();
+            Transfer transfer = new Transfer();
             DonutStack stack = cell.DonutStack;
             DonutStack neighborStack = neighborCell.DonutStack;
 
-            List<Donut> donuts1 = cell.DonutStack.GetTopDonutsOfOneType();
-            List<Donut> donuts2 = neighborCell.DonutStack.GetTopDonutsOfOneType();
+            List<DonutType> donuts1 = new();
+            foreach (Donut d in cell.DonutStack.GetTopDonutsOfOneType())
+            {
+                donuts1.Add(d.Type);
+            }
+            List<DonutType> donuts2 = neighborCell.DonutStack.GetTopSimulatedDonutsOfOneType();
 
             if ((stack.FreeDonutPlaces > 0 || neighborStack.FreeDonutPlaces > 0))
             {
+                transfer.Cell = cell;
+                transfer.NeighBor = neighborCell;
                 if (AreOtherTypesInStack(cell, donuts1) && AreOtherTypesInStack(neighborCell, donuts2))
                 {
+                    transfer.Priority = Priority.Low;
                     if (donuts1.Count > donuts2.Count)
                     {
                         transfer.From = cell; transfer.To = neighborCell;
                     }
-                    if (donuts1.Count < donuts2.Count)
+                    else if (donuts1.Count < donuts2.Count)
                     {
                         transfer.From = neighborCell; transfer.To = cell;
                     }
                     else
                     {
-                        transfer.From = neighborCell; transfer.To = cell;
+                        if (transfer.Cell.DonutStack.FreeDonutPlaces > transfer.NeighBor.DonutStack.FreeDonutPlaces)
+                        {
+                            transfer.From = neighborCell; transfer.To = cell;
+                        }
+                        else if (transfer.Cell.DonutStack.FreeDonutPlaces < transfer.NeighBor.DonutStack.FreeDonutPlaces)
+                        {
+                            transfer.From = cell; transfer.To = neighborCell;
+                        }
+                        else
+                        {
+                            //TODO: return best transfer
+                            transfer.From = neighborCell; transfer.To = cell;
+                        }
                     }
-                    transfer.Cell = cell;
-                    transfer.NeighBor = neighborCell;
-                    return Priority.Low;
+                    return transfer;
                 }
                 if (AreOtherTypesInStack(cell, donuts1) && neighborStack.FreeDonutPlaces > 0)
                 {
-                    transfer.From = cell;
-                    transfer.To = neighborCell;
-                    transfer.Cell = cell;
-                    transfer.NeighBor = neighborCell;
-                    return HighMidPriority(donuts1, donuts2);
+                    return MakeTransfer(from: cell, to: neighborCell, cell, neighborCell, donuts1, donuts2);
                 }
                 if (AreOtherTypesInStack(neighborCell, donuts2) && stack.FreeDonutPlaces > 0)
                 {
-                    transfer.From = neighborCell;
-                    transfer.To = cell;
-                    transfer.Cell = cell;
-                    transfer.NeighBor = neighborCell;
-                    return HighMidPriority(donuts1, donuts2);
+                    return MakeTransfer(from: neighborCell, to: cell, cell, neighborCell, donuts1, donuts2);
                 }
                 if (neighborStack.FreeDonutPlaces > 0)
                 {
-                    transfer.From = neighborCell;
-                    transfer.To = cell;
-                    transfer.Cell = cell;
-                    transfer.NeighBor = neighborCell;
-                    return HighMidPriority(donuts1, donuts2);
+                    // if (transfer.NeighBor.transform.localPosition.y > transfer.Cell.transform.localPosition.y)
+                    // {
+                    //     return MakeTransfer(from: cell, to: neighborCell, cell, neighborCell, donuts1, donuts2);
+                    // }
+                    return MakeTransfer(from: neighborCell, to: cell, cell, neighborCell, donuts1, donuts2);
                 }
             }
-            transfer = null;
-            return Priority.None;
+            return null;
         }
 
-        private static Priority HighMidPriority(List<Donut> donuts1, List<Donut> donuts2)
+        private Transfer MakeTransfer(Cell from, Cell to, Cell cell, Cell neighborCell, List<DonutType> donuts1, List<DonutType> donuts2)
+        {
+            Transfer transfer = new();
+            transfer.From = from;
+            transfer.To = to;
+            transfer.Cell = cell;
+            transfer.NeighBor = neighborCell;
+            transfer.Priority = HighMidPriority(donuts1, donuts2);
+            return transfer;
+        }
+
+        private Priority HighMidPriority(List<DonutType> donuts1, List<DonutType> donuts2)
         {
             if (StackCanBeFull(donuts1, donuts2))
+            {
                 return Priority.High;
+            }
 
             return Priority.Medium;
         }
 
-        private static bool StackCanBeFull(List<Donut> donuts1, List<Donut> donuts2)
+        private bool StackCanBeFull(List<DonutType> donuts1, List<DonutType> donuts2)
         {
             return donuts1.Count + donuts2.Count >= 3;
         }
 
-        private static bool AreOtherTypesInStack(Cell cell, List<Donut> donuts)
+        private bool AreOtherTypesInStack(Cell cell, List<DonutType> donuts)
         {
             return cell.DonutStack.DonutsCount > donuts.Count;
         }
