@@ -53,6 +53,45 @@ namespace Level
             }
         }
 
+        public async Task TransferDonut()
+        {
+            Donut fromTopDonut = From.DonutStack.GetTopDonut();
+            Vector3 newPosition = new Vector3(To.DonutStack.GetTopDonut().transform.position.x,
+                                             To.DonutStack.GetTopDonut().transform.position.y + Offset,
+                                             To.DonutStack.GetTopDonut().transform.position.z);
+
+            DoAnimation(From, To, fromTopDonut, newPosition);
+            await Task.Delay(500);
+            await CompleteTransfer(From, fromTopDonut, From.DonutStack, To.DonutStack);
+        }
+
+        private void DoAnimation(Cell from, Cell to, Donut fromTopDonut, Vector3 newPosition)
+        {
+            if (IsTransferringLastDonut(from))
+                GameObject.Destroy(from.DonutStack.Cylinder);
+            Vector3 firstPosition = fromTopDonut.transform.position - newPosition;
+            firstPosition = new Vector3(firstPosition.x, newPosition.y * 2, firstPosition.z / 2 + newPosition.z);
+
+            Sequence moveScale = DOTween.Sequence();
+            moveScale.Append(fromTopDonut.transform.DOMove(firstPosition, 0.25f));
+            moveScale.Append(fromTopDonut.transform.DOMove(newPosition, 0.25f));
+            moveScale.Insert(0, fromTopDonut.transform.DOScale(to.DonutStack.GetTopDonut().transform.localScale * 0.85f, moveScale.Duration()));
+
+            Sequence rotate = DOTween.Sequence();
+            rotate.Append(fromTopDonut.transform.DORotate(new Vector3(180,0,0),0.25f).SetRelative(true).SetEase(Ease.Linear));
+            rotate.Append(fromTopDonut.transform.DORotate(new Vector3(180,0,0), 0.25f).SetRelative(true).SetEase(Ease.Linear));
+        }
+
+        private bool IsTransferringLastDonut(Cell from)
+        {
+            return from.DonutStack.FreeDonutPlaces == 2;
+        }
+
+        private async Task CompleteTransfer(Cell from, Donut fromTopDonut, DonutStack fromDonutStack, DonutStack toDonutStack)
+        {
+            await fromDonutStack.RemoveDonut(fromTopDonut, toDonutStack);
+            await toDonutStack.AddDonut(fromTopDonut);
+        }
         private void TrySimulateDonutStacksMoving(Cell cell)
         {
             Row row = cell.GetComponentInParent<Row>();
@@ -76,36 +115,5 @@ namespace Level
             lastCell.DonutStack.SimulatedDonuts = null;
         }
 
-        // public async Task TransferDonut()
-        // {
-        //     Donut fromTopDonut = From.DonutStack.GetTopDonut();
-        //     Vector3 newPosition = new Vector3(To.DonutStack.GetTopDonut().transform.position.x,
-        //                                      To.DonutStack.GetTopDonut().transform.position.y + Offset,
-        //                                      To.DonutStack.GetTopDonut().transform.position.z);
-
-        //     DoAnimation(From, To, fromTopDonut, newPosition);
-        //     await Task.Delay(500);
-        // }
-
-        // private void DoAnimation(Cell from, Cell to, Donut fromTopDonut, Vector3 newPosition)
-        // {
-        //     if (IsTransferringLastDonut(from))
-        //         GameObject.Destroy(from.DonutStack.Cylinder);
-        //     fromTopDonut.transform.DOMove(newPosition, 0.5f).OnComplete(() =>
-        //     CompleteTransfer(fromTopDonut, from.DonutStack, to.DonutStack));
-        //     fromTopDonut.transform.DOScale(to.DonutStack.GetTopDonut().transform.localScale * 0.85f, 0.5f);
-        // }
-
-        // private static bool IsTransferringLastDonut(Cell from)
-        // {
-        //     return from.DonutStack.FreeDonutPlaces == 2;
-        // }
-
-        // private void CompleteTransfer(Donut fromTopDonut, DonutStack fromDonutStack, DonutStack toDonutStack)
-        // {
-        //     fromDonutStack.RemoveDonut(fromTopDonut);
-        //     toDonutStack.AddDonut(fromTopDonut);
-        //     fromTopDonut.transform.parent = toDonutStack.transform;
-        // }
     }
 }

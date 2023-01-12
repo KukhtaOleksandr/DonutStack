@@ -435,12 +435,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _donutPrefabs:
-  - {fileID: 8408876222998767961, guid: bc13e096410df95418f73eae1e502fa3, type: 3}
-  - {fileID: 8408876222998767961, guid: 5e45abeb3d7a3de46b5b323209dcedd4, type: 3}
-  - {fileID: 8408876222998767961, guid: 28ec10d27c3d6d9448bd0044c238415b, type: 3}
-  - {fileID: 8408876222998767961, guid: f67777909d858be4aaf3db64d7585d23, type: 3}
-  - {fileID: 8408876222998767961, guid: d0d25ebb41cf7974a8d8c74aa65f1f73, type: 3}
-  - {fileID: 8408876222998767961, guid: 7bb160b667fcb4f418be8032d80abac4, type: 3}
+  - {fileID: 8408876222998767961, guid: c03bc82c5702adb4aaec6892eaf56383, type: 3}
   _spawnPosition: {fileID: 2092408254}
 --- !u!114 &202127058
 MonoBehaviour:

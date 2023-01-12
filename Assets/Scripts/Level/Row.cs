@@ -38,8 +38,7 @@ namespace Level
         {
             cell.DestroyDonutStack();
             int index = ActiveCells.IndexOf(cell) + 1;
-            //if there's at least one active cell after release cell
-            if (index < ActiveCells.Count)
+            if (AreActiveCellsAfter(index))
             {
                 List<Cell> activeCellsAfterReleaseCell = ActiveCells.Skip(index).ToList();
                 Cell lastCell = cell;
@@ -51,6 +50,11 @@ namespace Level
             {
                 ReleaseCellInternal(cell);
             }
+        }
+
+        private bool AreActiveCellsAfter(int index)
+        {
+            return index < ActiveCells.Count;
         }
 
         private async Task<Cell> MoveCells(List<Cell> activeCellsAfterReleaseCell, Cell lastCell)

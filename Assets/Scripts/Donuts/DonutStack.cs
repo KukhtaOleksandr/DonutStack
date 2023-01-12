@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 using Zenject;
-using Level;
 
 namespace Donuts
 {
@@ -18,8 +17,7 @@ namespace Donuts
         public int DonutsCount { get => _donuts.Count; }
         public GameObject Cylinder { get => _cylinder; }
 
-        [Inject] private SignalBus _signalBus;
-        [Inject] private LevelArea _levelArea;
+        [Inject] private DonutsChangeHandler donutsChangeHandler;
         [SerializeField] private GameObject _cylinder;
 
         private List<Donut> _donuts;
@@ -38,7 +36,7 @@ namespace Donuts
             _donuts.Remove(donut);
             donut.transform.parent = to.transform;
             FreeDonutPlaces++;
-            await _levelArea.HandleDonutsChange(this);
+            await donutsChangeHandler.Handle(this);
             ResetSimulatedDonuts();
         }
 
@@ -46,7 +44,7 @@ namespace Donuts
         {
             _donuts.Add(donut);
             FreeDonutPlaces--;
-            await _levelArea.HandleDonutsChange(this);
+            await donutsChangeHandler.Handle(this);
             ResetSimulatedDonuts();
         }
 

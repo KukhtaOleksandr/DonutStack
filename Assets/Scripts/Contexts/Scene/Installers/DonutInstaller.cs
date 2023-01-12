@@ -14,11 +14,10 @@ namespace Contexts.Scene.Installers
         public override void InstallBindings()
         {
             Container.DeclareSignal<SignalDonutMovedToPosition>();
-            Container.DeclareSignal<SignalDonutStackIsFull>();
-            Container.DeclareSignal<SignalDonutStackIsEmpty>();
             Container.BindInstance(_donutPrefabs).AsSingle().WhenInjectedInto<DonutFactory>();
             Container.BindInstance(_spawnPosition).AsSingle().WhenInjectedInto<DonutFactory>();
             Container.BindInterfacesAndSelfTo<DonutFactory>().AsSingle().NonLazy();
+            Container.Bind<DonutsChangeHandler>().AsSingle();
         }
     }
 }
