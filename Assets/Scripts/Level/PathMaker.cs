@@ -1,3 +1,4 @@
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using Donuts;
@@ -9,33 +10,36 @@ namespace Level
     {
         [Inject] private LevelArea _levelArea;
 
-        private Queue<Transfer> connection;
+        private Path path;
 
-        public Queue<Transfer> GetPath(Cell cell)
+        public Path GetPath(Cell cell, Cell from)
         {
-            connection = new();
-            Transfer transfer = GetConnection(cell);
+            path = new();
+            Transfer transfer = GetConnection(cell, from);
             if (transfer == null)
             {
                 return null;
             }
             if (transfer.AttachedTransfer == null)
             {
-                connection.Enqueue(transfer);
-                return connection;
+                path.Connection.Enqueue(transfer);
+                return path;
             }
 
             while (transfer.Cell != cell)
             {
-                connection.Enqueue(transfer);
+                path.Connection.Enqueue(transfer);
                 transfer = transfer.AttachedTransfer;
             }
-            return connection;
+            path.Connection.Reverse();
+            return path;
         }
 
-        private Transfer GetConnection(Cell cell)
+        private Transfer GetConnection(Cell cell, Cell from)
         {
-            Dictionary<NeighborType, Cell> activeNeighbors = _levelArea.GetCellActiveNeighbors(cell, null);
+            path.InvolvedCells.Add(cell, from);
+            Dictionary<NeighborType, Cell> activeNeighbors = _levelArea.GetCellActiveNeighbors(cell, from);
+
             Dictionary<NeighborType, Cell> activeNeighborsWithSameTop = activeNeighbors.Where(
             n => n.Value.DonutStack.GetTopDonut().Type == cell.DonutStack.GetTopDonut().Type).
             ToDictionary(x => x.Key, x => x.Value);
@@ -75,6 +79,10 @@ namespace Level
             }
             else
             {
+                foreach (var n in activeNeighbors)
+                {
+                    path.InvolvedCells.AddUnique(n.Value, cell);
+                }
                 return highestPriorities.First();
             }
         }
@@ -84,7 +92,12 @@ namespace Level
             List<List<Transfer>> highestSubPriorities = new();
             foreach (var h in highestPriorities)
             {
+                path.InvolvedCells.AddUnique(h.From, from);
                 Dictionary<NeighborType, Cell> activeNeighbors = _levelArea.GetCellActiveNeighbors(h.NeighBor, from);
+                foreach (var n in activeNeighbors)
+                {
+                    path.InvolvedCells.AddUnique(n.Value, from);
+                }
                 Dictionary<NeighborType, Cell> activeNeighborsWithSameTop = activeNeighbors.Where(
                     n => n.Value.DonutStack.GetTopSimulatedDonut() == h.Cell.DonutStack.GetTopSimulatedDonut()).ToDictionary(x => x.Key, x => x.Value);
 
@@ -108,7 +121,7 @@ namespace Level
                 }
 
                 if (isNeighborWithFreeDonutPlaces == false && priorities.Count == 0)
-                    return null;
+                    continue;
 
                 List<Transfer> localPriorities = GetHighestPriorities(priorities);
                 foreach (var p in localPriorities)
@@ -117,10 +130,23 @@ namespace Level
                     highestSubPriorities.Add(localPriorities);
                 }
             }
-
+            if (highestSubPriorities.Count == 0)
+                return null;
             highestSubPriorities = GetHighestPriorities(highestSubPriorities);
             if (highestSubPriorities.Count > 1)
             {
+                bool returnFirst = true;
+                foreach (var l in highestSubPriorities)
+                {
+                    foreach (var p in l)
+                    {
+                        if (p.To != from)
+                            returnFirst = false;
+                    }
+                }
+                if (returnFirst)
+                    return null;
+
                 List<Transfer> newPriorities = new();
                 foreach (var d in highestSubPriorities)
                 {

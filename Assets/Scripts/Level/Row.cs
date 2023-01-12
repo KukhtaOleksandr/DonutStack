@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -44,11 +45,11 @@ namespace Level
                 Cell lastCell = cell;
                 lastCell = await MoveCells(activeCellsAfterReleaseCell, lastCell);
 
-                ReleaseCell(lastCell);
+                ReleaseCellInternal(lastCell);
             }
             else
             {
-                ReleaseCell(cell);
+                ReleaseCellInternal(cell);
             }
         }
 
@@ -63,7 +64,7 @@ namespace Level
             return lastCell;
         }
 
-        private void ReleaseCell(Cell cell)
+        private void ReleaseCellInternal(Cell cell)
         {
             ActiveCells.Remove(cell);
             _freeCells.Insert(0, cell);

@@ -33,35 +33,33 @@ namespace Donuts
             ResetSimulatedDonuts();
             FreeDonutPlaces = MaxDonutSpaces - _donuts.Count;
         }
-        public async Task RemoveDonut(Donut donut)
+        public async Task RemoveDonut(Donut donut, DonutStack to)
         {
             _donuts.Remove(donut);
+            donut.transform.parent = to.transform;
             FreeDonutPlaces++;
             await _levelArea.HandleDonutsChange(this);
-            // if (FreeDonutPlaces == 3)
-            //     _signalBus.Fire<SignalDonutStackIsEmpty>(new SignalDonutStackIsEmpty() { DonutStack = this });
+            ResetSimulatedDonuts();
         }
 
         public async Task AddDonut(Donut donut)
         {
             _donuts.Add(donut);
             FreeDonutPlaces--;
-
             await _levelArea.HandleDonutsChange(this);
-            //if (IsDonutStackFull())
-            //    _signalBus.Fire<SignalDonutStackIsFull>(new SignalDonutStackIsFull() { DonutStack = this });
+            ResetSimulatedDonuts();
         }
 
         public void ResetSimulatedDonuts()
         {
             SimulatedDonuts = new();
-            foreach(Donut donut in _donuts)
+            foreach (Donut donut in _donuts)
             {
                 SimulatedDonuts.Add(donut.Type);
             }
         }
 
-        private bool IsDonutStackFull()
+        public bool IsFull()
         {
             return FreeDonutPlaces == 0 && GetTopDonutsOfOneType().Count == 3;
         }
@@ -88,7 +86,7 @@ namespace Donuts
 
         public List<DonutType> GetTopSimulatedDonutsOfOneType()
         {
-            List<DonutType> donuts = new (SimulatedDonuts);
+            List<DonutType> donuts = new(SimulatedDonuts);
             List<DonutType> result = new List<DonutType>();
             donuts.Reverse();
             DonutType topDonutType = GetTopSimulatedDonut();
@@ -113,7 +111,7 @@ namespace Donuts
 
         public DonutType GetTopSimulatedDonut()
         {
-            return SimulatedDonuts[SimulatedDonuts.Count-1];
+            return SimulatedDonuts[SimulatedDonuts.Count - 1];
         }
 
         public async Task MoveDonutStack(Vector3 position)

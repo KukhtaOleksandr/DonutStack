@@ -42,46 +42,89 @@ namespace Level
                 return;
             }
 
-            Queue<Transfer> path = _pathMaker.GetPath(CurrentCell);
+            Path path = _pathMaker.GetPath(CurrentCell, null);
             if (path != null)
             {
-                while (path.Count > 0)
+                bool isFirstTransfer = false;
+                while (path.Connection.Count > 0)
                 {
-                    Transfer transfer = path.Dequeue();
+                    Transfer transfer = path.Connection.Dequeue();
+                    if (isFirstTransfer == false)
+                    {
+                        path.InvolvedCells[transfer.Cell] = transfer.NeighBor;
+                        isFirstTransfer = true;
+                    }
                     while (transfer.From.CanTransferDonutTo(transfer.To))
                         await TransferDonut(transfer.From, transfer.To);
                 }
                 _levelArea.ResetSimulatedDonuts();
-                if (CurrentCell.DonutStack.FreeDonutPlaces < 3)
-                {
-                    Dictionary<NeighborType, Cell> neighbors1 = _levelArea.GetCellActiveNeighbors(CurrentCell, null).
-                    Where(n => n.Value.DonutStack.GetTopDonut().Type == CurrentCell.DonutStack.GetTopDonut().Type).
-                    ToDictionary(x => x.Key, x => x.Value);
 
-                    bool isNeighborWithFreeDonutPlaces = false;
-                    foreach (var n in neighbors1)
+                while (path.InvolvedCells.Count > 0)
+                {
+                    var cell = path.InvolvedCells.First();
+                    if (cell.Key.DonutStack != null)
                     {
-                        if (n.Value.DonutStack.FreeDonutPlaces > 0)
+                        if (cell.Key.DonutStack.FreeDonutPlaces < 3 && cell.Key.DonutStack.IsFull() == false)
                         {
-                            isNeighborWithFreeDonutPlaces = true;
-                            break;
+                            Dictionary<NeighborType, Cell> neighbors1 = _levelArea.GetCellActiveNeighbors(cell.Key, cell.Value).
+                            Where(n => n.Value.DonutStack.GetTopDonut().Type == cell.Key.DonutStack.GetTopDonut().Type).
+                            ToDictionary(x => x.Key, x => x.Value);
+                            if (neighbors1.Count == 0)
+                            {
+                                path.InvolvedCells.Remove(cell.Key);
+                                continue;
+                            }
+
+                            bool isNeighborWithFreeDonutPlaces = false;
+                            foreach (var n in neighbors1)
+                            {
+                                if (n.Value.DonutStack.FreeDonutPlaces > 0)
+                                {
+                                    isNeighborWithFreeDonutPlaces = true;
+                                    break;
+                                }
+                            }
+                            if (isNeighborWithFreeDonutPlaces || cell.Key.DonutStack.FreeDonutPlaces > 0)
+                            {
+                                Path path1 = _pathMaker.GetPath(cell.Key, cell.Value);
+
+                                //path.InvolvedCells = involvedCells.Merge();
+
+                                if (path1 != null)
+                                {
+                                    path.InvolvedCells = path.InvolvedCells.Concat(path1.InvolvedCells.Where(x => !path.InvolvedCells.Keys.
+                                    Contains(x.Key))).ToDictionary(x => x.Key, x => x.Value);
+                                    while (path1.Connection.Count > 0)
+                                    {
+                                        Transfer transfer = path1.Connection.Dequeue();
+                                        while (transfer.From.CanTransferDonutTo(transfer.To))
+                                            await TransferDonut(transfer.From, transfer.To);
+                                    }
+                                }
+                                _levelArea.ResetSimulatedDonuts();
+                            }
                         }
                     }
-                    if (isNeighborWithFreeDonutPlaces)
+                    path.InvolvedCells.Remove(cell.Key);
+                    if (path.InvolvedCells.Count == 0)
+                        break;
+                    if (cell.Key.DonutStack != null)
                     {
-                        Queue<Transfer> path1 = _pathMaker.GetPath(CurrentCell);
-                        if (path1 != null)
-                            while (path1.Count > 0)
+                        if (cell.Key.DonutStack.FreeDonutPlaces < 3 && cell.Key.DonutStack.IsFull() == false)
+                        {
+                            try
                             {
-                                Transfer transfer = path.Dequeue();
-                                while (transfer.From.CanTransferDonutTo(transfer.To))
-                                    await TransferDonut(transfer.From, transfer.To);
+                                path.InvolvedCells.Add(cell.Key, cell.Value);
                             }
-                        _levelArea.ResetSimulatedDonuts();
+                            catch
+                            {
+                                break;
+                            }
+                        }
                     }
+                    //last = cell;
                 }
             }
-
 
             _signalBus.Fire<SignalConnectionFinished>();
         }
@@ -95,7 +138,7 @@ namespace Level
 
             DoAnimation(from, to, fromTopDonut, newPosition);
             await Task.Delay(500);
-            CompleteTransfer(from, fromTopDonut, from.DonutStack, to.DonutStack);
+            await CompleteTransfer(from, fromTopDonut, from.DonutStack, to.DonutStack);
         }
 
         private void DoAnimation(Cell from, Cell to, Donut fromTopDonut, Vector3 newPosition)
@@ -111,19 +154,19 @@ namespace Level
             return from.DonutStack.FreeDonutPlaces == 2;
         }
 
-        private async void CompleteTransfer(Cell from, Donut fromTopDonut, DonutStack fromDonutStack, DonutStack toDonutStack)
+        private async Task CompleteTransfer(Cell from, Donut fromTopDonut, DonutStack fromDonutStack, DonutStack toDonutStack)
         {
             if (IsTransferringLastDonut(from))
             {
+                await fromDonutStack.RemoveDonut(fromTopDonut, toDonutStack);
                 await toDonutStack.AddDonut(fromTopDonut);
-                await fromDonutStack.RemoveDonut(fromTopDonut);
             }
             else
             {
-                await fromDonutStack.RemoveDonut(fromTopDonut);
+                await fromDonutStack.RemoveDonut(fromTopDonut, toDonutStack);
+                //fromTopDonut.transform.parent = toDonutStack.transform;
                 await toDonutStack.AddDonut(fromTopDonut);
             }
-            fromTopDonut.transform.parent = toDonutStack.transform;
         }
 
         private bool DonutsTypesEqual(Cell cell)
