@@ -10,11 +10,13 @@ namespace Level
     public class Transfer
     {
         private const float Offset = 0.3f;
+        private const float Duration = 0.15f;
+
         public Cell From { get; set; }
         public Cell To { get; set; }
         public Cell Cell { get; set; }
         public Cell NeighBor { get; set; }
-        public Cell SimulatedCell { get; private set; }
+        public NeighborType NeighborType { get; set; }
         public Transfer AttachedTransfer { get; set; }
         public Priority Priority { get; set; }
 
@@ -60,26 +62,71 @@ namespace Level
                                              To.DonutStack.GetTopDonut().transform.position.y + Offset,
                                              To.DonutStack.GetTopDonut().transform.position.z);
 
-            DoAnimation(From, To, fromTopDonut, newPosition);
-            await Task.Delay(500);
-            await CompleteTransfer(From, fromTopDonut, From.DonutStack, To.DonutStack);
+            await DoAnimation(From, To, fromTopDonut, newPosition);
+
         }
 
-        private void DoAnimation(Cell from, Cell to, Donut fromTopDonut, Vector3 newPosition)
+        private async Task DoAnimation(Cell from, Cell to, Donut fromTopDonut, Vector3 newPosition)
         {
             if (IsTransferringLastDonut(from))
                 GameObject.Destroy(from.DonutStack.Cylinder);
-            Vector3 firstPosition = fromTopDonut.transform.position - newPosition;
-            firstPosition = new Vector3(firstPosition.x, newPosition.y * 2, firstPosition.z / 2 + newPosition.z);
+            Vector3 firstPosition = GetFirstPosition(fromTopDonut.transform.position, newPosition);
+            await DoTransferAnimation(to, fromTopDonut, newPosition, firstPosition);
 
+            await CompleteTransfer(From, fromTopDonut, From.DonutStack, To.DonutStack);
+        }
+
+
+        private Vector3 GetFirstPosition(Vector3 start, Vector3 end)
+        {
+            Vector3 result = start - end;
+            if (NeighborType == NeighborType.Top || NeighborType == NeighborType.Bottom)
+            {
+                result = new Vector3(start.x, end.y * 2.5f, result.z / 2 + end.z);
+            }
+            else
+            {
+                result = new Vector3(result.x / 2 + end.x, end.y * 2.5f, start.z);
+            }
+            return result;
+        }
+
+        private Vector3 GetRotation()
+        {
+            if (NeighborType == NeighborType.Top)
+            {
+                return new Vector3(-90, 0, 0);
+            }
+            if (NeighborType == NeighborType.Bottom)
+            {
+                return new Vector3(90, 0, 0);
+            }
+            if (NeighborType == NeighborType.Right)
+            {
+                return new Vector3(0, 0, -90);
+            }
+            else
+            {
+                return new Vector3(0, 0, 90);
+            }
+        }
+
+        private async Task DoTransferAnimation(Cell to, Donut fromTopDonut, Vector3 newPosition, Vector3 firstPosition)
+        {
+            TweenParams moveScaleParams = new TweenParams().SetEase(Ease.InSine);
             Sequence moveScale = DOTween.Sequence();
-            moveScale.Append(fromTopDonut.transform.DOMove(firstPosition, 0.25f));
-            moveScale.Append(fromTopDonut.transform.DOMove(newPosition, 0.25f));
+            Vector3 rotation = GetRotation();
+            moveScale.Append(fromTopDonut.transform.DOMove(firstPosition, Duration));
+            moveScale.Append(fromTopDonut.transform.DOMove(newPosition, Duration));
             moveScale.Insert(0, fromTopDonut.transform.DOScale(to.DonutStack.GetTopDonut().transform.localScale * 0.85f, moveScale.Duration()));
+            moveScale.SetAs(moveScaleParams);
 
+            TweenParams rotateParams = new TweenParams().SetEase(Ease.InSine).SetRelative(true);
             Sequence rotate = DOTween.Sequence();
-            rotate.Append(fromTopDonut.transform.DORotate(new Vector3(180,0,0),0.25f).SetRelative(true).SetEase(Ease.Linear));
-            rotate.Append(fromTopDonut.transform.DORotate(new Vector3(180,0,0), 0.25f).SetRelative(true).SetEase(Ease.Linear));
+            rotate.Append(fromTopDonut.transform.DORotate(rotation, Duration, RotateMode.WorldAxisAdd));
+            rotate.Append(fromTopDonut.transform.DORotate(rotation, Duration, RotateMode.WorldAxisAdd));
+            rotate.SetAs(rotateParams);
+            await Task.Delay(300);
         }
 
         private bool IsTransferringLastDonut(Cell from)
@@ -89,9 +136,38 @@ namespace Level
 
         private async Task CompleteTransfer(Cell from, Donut fromTopDonut, DonutStack fromDonutStack, DonutStack toDonutStack)
         {
+            await DoSquishAnimation(fromTopDonut, toDonutStack);
+            await TryDoFullAnimation(toDonutStack, fromTopDonut);
             await fromDonutStack.RemoveDonut(fromTopDonut, toDonutStack);
             await toDonutStack.AddDonut(fromTopDonut);
         }
+
+        private static async Task TryDoFullAnimation(DonutStack donutStack, Donut fromTopDonut)
+        {
+            List<Donut> donuts = donutStack.GetTopDonutsOfOneType();
+            DonutType donutType = donuts.First().Type;
+            if (donuts.Count == 2)
+            {
+                if (donutType == fromTopDonut.Type)
+                {
+                    donutStack.transform.DOScale(Vector3.zero, 0.15f);
+                    await Task.Delay(150);
+                }
+            }
+        }
+
+        private async Task DoSquishAnimation(Donut fromTopDonut, DonutStack toDonutStack)
+        {
+            fromTopDonut.transform.parent = toDonutStack.transform;
+            TweenParams scaleParams = new TweenParams().SetEase(Ease.Linear);
+            Sequence scale = DOTween.Sequence();
+            Vector3 firstScale = new Vector3(1.2f, 0.8f, 1.2f);
+            scale.Append(toDonutStack.transform.DOScale(firstScale, 0.075f));
+            scale.Append(toDonutStack.transform.DOScale(new Vector3(1, 1, 1), 0.075f));
+            scale.SetAs(scaleParams);
+            await Task.Delay(150);
+        }
+
         private void TrySimulateDonutStacksMoving(Cell cell)
         {
             Row row = cell.GetComponentInParent<Row>();

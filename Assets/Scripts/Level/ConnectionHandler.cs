@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Donuts.StateMachine;
+using Extensions;
 using Zenject;
 
 namespace Level
@@ -36,7 +37,7 @@ namespace Level
                 return;
             }
 
-            Path path = _pathMaker.GetPath(CurrentCell, null);
+            Path path = _pathMaker.GetPath(CurrentCell, CurrentCell);
             if (PathExists(path))
             {
                 bool isFirstTransfer = false;
@@ -54,9 +55,16 @@ namespace Level
                 }
                 _levelArea.ResetSimulatedDonuts();
 
-                while (InvolvedCellsExist(path))
+                int cellsWithoutPath = 0;
+                KeyValuePair<Cell, Cell> lastCell = default;
+                while (path.InvolvedCells.Count > 0)
                 {
                     var cell = path.InvolvedCells.First();
+                    if (cell.Equals(lastCell))
+                    {
+                        if (path.InvolvedCells.Count > 1)
+                            cell = path.InvolvedCells.ElementAt(1);
+                    }
                     if (DonutStackExists(cell))
                     {
                         if (CellCanHaveConnection(cell))
@@ -64,6 +72,7 @@ namespace Level
                             Dictionary<NeighborType, Cell> subNeighbors = GetNeighborsWithSameTopDonut(cell.Key, cell.Value);
                             if (subNeighbors.Count == 0)
                             {
+                                cellsWithoutPath++;
                                 path.InvolvedCells.Remove(cell.Key);
                                 continue;
                             }
@@ -71,30 +80,50 @@ namespace Level
                             if (NeighborsAreCompatible(subNeighbors) || cell.Key.DonutStack.FreeDonutPlaces > 0)
                             {
                                 Path subPath = _pathMaker.GetPath(cell.Key, cell.Value);
-                                if (PathExists(subPath))
+                                if (PathExists(subPath) && ConnectionExists(subPath))
                                 {
+                                    cellsWithoutPath = 0;
                                     path.InvolvedCells = MergePathsInvolvedCells(path, subPath);
+                                    isFirstTransfer = false;
                                     while (subPath.Connection.Count > 0)
                                     {
                                         Transfer transfer = subPath.Connection.Dequeue();
+                                        if (isFirstTransfer == false)
+                                        {
+                                            cell = new(cell.Key, transfer.NeighBor);
+                                            isFirstTransfer = true;
+                                        }
                                         while (transfer.From.CanTransferDonutTo(transfer.To))
                                             await transfer.TransferDonut();
                                     }
                                 }
+                                else
+                                    cellsWithoutPath++;
                                 _levelArea.ResetSimulatedDonuts();
                             }
+                            else
+                                cellsWithoutPath++;
                         }
+                        else
+                            cellsWithoutPath++;
                     }
-                    path.InvolvedCells.Remove(cell.Key);
+                    else
+                        cellsWithoutPath++;
+
+                    if (cellsWithoutPath > path.InvolvedCells.Count)
+                        break;
 
                     if (path.InvolvedCells.Count == 0)
                         break;
 
+                    path.InvolvedCells.Remove(cell.Key);
+                    
+
                     if (DonutStackExists(cell))
                     {
-                        if (CheckForConnectionFinish(cell,path))
+                        if (CheckForConnectionFinish(cell, path))
                         {
-                            break;
+                            lastCell = cell;
                         }
                     }
                 }
@@ -158,6 +187,11 @@ namespace Level
         private bool PathExists(Path path)
         {
             return path != null;
+        }
+
+        private bool ConnectionExists(Path path)
+        {
+            return path.Connection.Count > 0;
         }
 
         private Dictionary<NeighborType, Cell> GetNeighborsWithSameTopDonut(Cell cell, Cell from)

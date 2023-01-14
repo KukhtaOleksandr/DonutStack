@@ -36,6 +36,7 @@ namespace Donuts
             _donuts.Remove(donut);
             donut.transform.parent = to.transform;
             FreeDonutPlaces++;
+            await Task.Delay(200);
             await donutsChangeHandler.Handle(this);
             ResetSimulatedDonuts();
         }

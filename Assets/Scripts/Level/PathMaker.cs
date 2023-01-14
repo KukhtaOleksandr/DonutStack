@@ -40,7 +40,7 @@ namespace Level
         {
             path.InvolvedCells.Add(cell, from);
             Dictionary<NeighborType, Cell> activeNeighbors = _levelArea.GetCellActiveNeighbors(cell, from);
-            SetNeighborsWithSameTopDonut(cell, activeNeighbors);
+            activeNeighbors = GetNeighborsWithSameTopDonut(cell, activeNeighbors);
 
             if (NeighborsAreCompatible(activeNeighbors) == false && cell.DonutStack.FreeDonutPlaces == 0)
                 return null;
@@ -61,7 +61,7 @@ namespace Level
             }
             else
             {
-                AddInvolvedCells(path.InvolvedCells, from, activeNeighbors);
+                path.InvolvedCells = AddInvolvedCells(path.InvolvedCells, from, activeNeighbors);
                 return transfers.First();
             }
         }
@@ -74,8 +74,12 @@ namespace Level
                 path.InvolvedCells.AddUnique(h.From, from);
                 Dictionary<NeighborType, Cell> activeNeighbors = _levelArea.GetCellActiveNeighbors(h.NeighBor, from);
 
-                AddInvolvedCells(path.InvolvedCells, from, activeNeighbors);
-                SetNeighborsWithSimulatedSameTopDonut(from, activeNeighbors);
+
+                foreach (var n in activeNeighbors)
+                {
+                    path.InvolvedCells.AddUnique(n.Value, from);
+                }
+                activeNeighbors = GetNeighborsWithSimulatedSameTopDonut(from, activeNeighbors);
 
                 List<Transfer> transfers = GetPossibleTransfers(activeNeighbors, from);
 
@@ -128,15 +132,16 @@ namespace Level
 
         private bool CurrentConnectionPossible(Cell from, List<List<Transfer>> highestSubTransfers)
         {
+            bool isPossible = false;
             foreach (var l in highestSubTransfers)
             {
                 foreach (var p in l)
                 {
                     if (p.To != from)
-                        return false;
+                        isPossible = true;
                 }
             }
-            return true;
+            return isPossible;
         }
 
         private bool PathIsNotFinished(Cell cell, Transfer transfer)
@@ -149,12 +154,22 @@ namespace Level
             return transfer.AttachedTransfer == null;
         }
 
-        private void AddInvolvedCells(Dictionary<Cell, Cell> involvedCells, Cell from, Dictionary<NeighborType, Cell> activeNeighbors)
+        private Dictionary<Cell, Cell> AddInvolvedCells(Dictionary<Cell, Cell> involvedCells, Cell from, Dictionary<NeighborType, Cell> activeNeighbors)
         {
+            Dictionary<Cell, Cell> result = new();
             foreach (var n in activeNeighbors)
             {
                 involvedCells.AddUnique(n.Value, from);
             }
+            result = MergePathsInvolvedCells(result, involvedCells);
+            return result;
+        }
+
+        private Dictionary<Cell, Cell> MergePathsInvolvedCells(Dictionary<Cell, Cell> path, Dictionary<Cell, Cell> subPath)
+        {
+            Dictionary<Cell, Cell> result = path.Concat(subPath.Where(x => !path.Keys.
+             Contains(x.Key))).ToDictionary(x => x.Key, x => x.Value);
+            return result;
         }
 
         private List<Transfer> GetPossibleTransfers(Dictionary<NeighborType, Cell> activeNeighbors, Cell cell)
@@ -162,7 +177,7 @@ namespace Level
             List<Transfer> transfers = new();
             foreach (var neighbor in activeNeighbors)
             {
-                Transfer transfer = _transferMaker.Make(cell, neighbor.Value);
+                Transfer transfer = _transferMaker.Make(cell, neighbor.Value, neighbor.Key);
                 if (transfer != null)
                     transfers.Add(transfer);
             }
@@ -183,16 +198,16 @@ namespace Level
             return isNeighborWithFreeDonutPlaces;
         }
 
-        private void SetNeighborsWithSameTopDonut(Cell cell, Dictionary<NeighborType, Cell> activeNeighbors)
+        private Dictionary<NeighborType, Cell> GetNeighborsWithSameTopDonut(Cell cell, Dictionary<NeighborType, Cell> activeNeighbors)
         {
-            activeNeighbors = activeNeighbors.Where(
+            return activeNeighbors.Where(
             n => n.Value.DonutStack.GetTopDonut().Type == cell.DonutStack.GetTopDonut().Type).
             ToDictionary(x => x.Key, x => x.Value);
         }
 
-        private void SetNeighborsWithSimulatedSameTopDonut(Cell cell, Dictionary<NeighborType, Cell> activeNeighbors)
+        private Dictionary<NeighborType, Cell> GetNeighborsWithSimulatedSameTopDonut(Cell cell, Dictionary<NeighborType, Cell> activeNeighbors)
         {
-            activeNeighbors = activeNeighbors.Where(
+            return activeNeighbors.Where(
             n => n.Value.DonutStack.GetTopSimulatedDonut() == cell.DonutStack.GetTopSimulatedDonut()).
             ToDictionary(x => x.Key, x => x.Value);
         }

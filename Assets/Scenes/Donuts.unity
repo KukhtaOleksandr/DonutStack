@@ -435,6 +435,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _donutPrefabs:
+  - {fileID: 8408876222998767961, guid: e83fe0b986a5dd7418ff30bcaa347a3d, type: 3}
+  - {fileID: 8408876222998767961, guid: 83290ef3284748f47b41bf442d9e166e, type: 3}
+  - {fileID: 8408876222998767961, guid: 08273de651862b04ab4066a0da752333, type: 3}
+  - {fileID: 8408876222998767961, guid: 7bb160b667fcb4f418be8032d80abac4, type: 3}
+  - {fileID: 8408876222998767961, guid: 44fb47d50484ad04b8c9e2052499364f, type: 3}
+  - {fileID: 8408876222998767961, guid: bd7dc81b3445f2d4ca90d2dd825df7cd, type: 3}
+  - {fileID: 8408876222998767961, guid: 4fb9a1fea59fafa419570a37bcd671de, type: 3}
+  - {fileID: 8408876222998767961, guid: a6c3fa92e0259064382c7e259ca04a73, type: 3}
+  - {fileID: 8408876222998767961, guid: 66b5c8426b5d6a342b01b9406cf59af7, type: 3}
+  - {fileID: 8408876222998767961, guid: e41b00eaa0467ec49bb65798c7f09c80, type: 3}
+  - {fileID: 8408876222998767961, guid: 8f54655daf6513c409ae2a8d78a7a382, type: 3}
+  - {fileID: 8408876222998767961, guid: 96272602c0a44d240937b928ab6f1467, type: 3}
+  - {fileID: 8408876222998767961, guid: 3f6bdfd9a7643f04b942b5210946c5dc, type: 3}
+  - {fileID: 8408876222998767961, guid: eb7afc46e65a5cb42b22cdd5b9ee2694, type: 3}
+  - {fileID: 8408876222998767961, guid: 4f3a313adb4bd6444a6156c682ea2c0c, type: 3}
+  - {fileID: 8408876222998767961, guid: d2145d9f4e84f324788d090af5022c84, type: 3}
+  - {fileID: 8408876222998767961, guid: fd6c3cdda421faa4fb00b372ca1fbc7e, type: 3}
+  - {fileID: 8408876222998767961, guid: 5e5808d067c1a31478510e00e1d90ba2, type: 3}
   - {fileID: 8408876222998767961, guid: c03bc82c5702adb4aaec6892eaf56383, type: 3}
   _spawnPosition: {fileID: 2092408254}
 --- !u!114 &202127058

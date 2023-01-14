@@ -22,8 +22,8 @@ namespace Level
             {
                 if (donuts1.Count + donuts2.Count >= 3)
                 {
-                    if (other.AreOtherTypesInStack() == false || AreOtherTypesInStack() == false)
-                        return true;
+                if (other.AreOtherTypesInStack() == false || AreOtherTypesInStack() == false)
+                   return true;
                 }
             }
             return false;
