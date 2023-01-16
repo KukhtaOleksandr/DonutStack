@@ -16,7 +16,7 @@ namespace Contexts.Scene.Installers
             Container.DeclareSignal<SignalDonutMovedToPosition>();
             Container.BindInstance(_donutPrefabs).AsSingle().WhenInjectedInto<DonutFactory>();
             Container.BindInstance(_spawnPosition).AsSingle().WhenInjectedInto<DonutFactory>();
-            Container.BindInterfacesAndSelfTo<DonutFactory>().AsSingle().NonLazy();
+            Container.Bind<DonutFactory>().AsSingle().NonLazy();
             Container.Bind<DonutsChangeHandler>().AsSingle();
         }
     }

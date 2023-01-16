@@ -7,7 +7,7 @@ using Zenject;
 
 namespace Donuts
 {
-    public class DonutFactory : IInitializable, IDisposable
+    public class DonutFactory
     {
         private List<DonutStack> _donutPrefabs;
         private SignalBus _signalBus;
@@ -22,20 +22,9 @@ namespace Donuts
             _container = container;
             _creationPosition = creationPosition;
             _signalBus = signalBus;
-            Create();
         }
 
-        public void Initialize()
-        {
-            _signalBus.Subscribe<SignalConnectionFinished>(Create);
-        }
-
-        public void Dispose()
-        {
-            _signalBus.Unsubscribe<SignalConnectionFinished>(Create);
-        }
-
-        private void Create()
+        public void Create()
         {
             DonutStack donutPrefab= _donutPrefabs[UnityEngine.Random.Range(0,_donutPrefabs.Count)];
             CurrentDonutStack= _container.InstantiatePrefabForComponent<DonutStack>

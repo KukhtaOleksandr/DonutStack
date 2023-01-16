@@ -1,24 +1,26 @@
 using Donuts;
 using Input;
+using Level;
+using StateMachine.Base;
 using UnityEngine;
 using Zenject;
 
-namespace Level
+namespace Architecture.StateMachine
 {
-    public class RowsClickHandler : MonoBehaviour
+    public class HandleRowClickState : IState
     {
-        [SerializeField] private Camera _camera;
-        [SerializeField] private LayerMask _layerMask;
+        [Inject] private Camera _camera;
+        [Inject] private LayerMask _layerMask;
         [Inject] private SignalBus _signalBus;
         [Inject] private ConnectionHandler _connectionHandler;
         [Inject] private DonutFactory _donutFactory;
 
-        void OnEnable()
+        public void Enter()
         {
             _signalBus.Subscribe<SignalMouseClicked>(HandleClick);
         }
 
-        void OnDisable()
+        public void Exit()
         {
             _signalBus.Unsubscribe<SignalMouseClicked>(HandleClick);
         }
@@ -34,8 +36,9 @@ namespace Level
                 Cell freeCell = row.GetFreeCell();
 
                 InitializeConnectionHandler(row, freeCell);
-                
+
                 _signalBus.Fire<SignalRowClicked>(new SignalRowClicked() { Position = freeCell.transform.position });
+                _signalBus.Fire<SignalChangedState>(new SignalChangedState() { State = new InConnectionState() });
             }
         }
 
